@@ -1,0 +1,5 @@
+
+sabnazbd_interface.py
+plex_monitor_service.py
+local_config.yaml
+*.pyc
