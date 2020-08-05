@@ -148,25 +148,25 @@ class plexMon(PyService):
             time.sleep(60)
             running = self.plex.is_alive()
         while True:
-            current_time = datetime.datetime.now()
-            # Currently only works with VPN_Start < VPN_Stop, does not handle date transitions - Will address later
-            if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
-                if not vpn_on:
-                    vpn_on = self.plex_to_vpn_transition()
-                time.sleep(self.config["offpeak_interval"] * 60)
-            else:
-                if vpn_on:
-                    vpn_on = self.vpn_to_plex_transition()
-                plex_alive = self.check_plex()
-                if not plex_alive:
-                    self.logger.warning("Plex found not running")
-                    self.restart_plex()
-                time.sleep((self.config["peak_interval"]))                
+            try:
+                current_time = datetime.datetime.now()
+                # Currently only works with VPN_Start < VPN_Stop, does not handle date transitions - Will address later
+                if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
+                    if not vpn_on:
+                        vpn_on = self.plex_to_vpn_transition()
+                    time.sleep(self.config["offpeak_interval"] * 60)
+                else:
+                    if vpn_on:
+                        vpn_on = self.vpn_to_plex_transition()
+                    plex_alive = self.check_plex()
+                    if not plex_alive:
+                        self.logger.warning("Plex found not running")
+                        self.restart_plex()
+                    time.sleep((self.config["peak_interval"]))                
             except KeyboardInterrupt:
                 # Shouldn't be possible to get here but just in case
                 self.logger.critical("Exiting PlexMon")
                 self.SvcStop()
 
-
 if __name__ == '__main__':
-    plexmon.parse_command_line()
+    plexMon.parse_command_line()
