@@ -1,4 +1,5 @@
-# plex server restart
+#!/usr/bin/env python3
+# plex server script
 
 import os
 import sys
@@ -6,156 +7,179 @@ import time
 import datetime
 import subprocess
 import re
+import logging
+import yaml
 
-OFTEN = 60
-NOT_SO_OFTEN = 900
-HOUR = 3600
-VPN_ON = False
-OMBI_ON = False
-OMBI_CHECK = False
+import sabnzbd_interface
+import plex_handler
+import nordvpn
 
-VPN_START = 3
-VPN_END = 8
 
-PATH_FOR_SAB_CONFIG = "C:\\Users\\basil\\AppData\\Local\\sabnzbd\\sabnzbd.ini"
+def config_logger(logger_name):
+    """ Configures the file logger used for PlexMon - log saved here:
+        E:\PlexServiceLogs\
+    """
+    formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+    file_date = datetime.datetime.now().strftime("%m_%d_%y_%H%M")
+    file_handler = logging.FileHandler(f"E:\\PlexServiceLogs\\PlexMon{file_date}.log")
+    file_handler.setFormatter(formatter)
 
-def main():
-    # initial check
-    global VPN_ON
-    global OMBI_ON
-    global OMBI_CHECK
-    tasklist = get_tasklist()
-    OMBI_ON = ombi_search(tasklist)[0]
-    VPN_ON = False
-    running = check_plex()
-    while not running:
-        start_plex()
-        time.sleep(60)
-        print("{0}: \n\t****Plex Started****\n".format(datetime.datetime.now()))
-    while True:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
+    return logger
+
+class plexMon():
+    """ Plex and subsequent service monitor """
+
+    def __init__(self, config:dict, args):
+        self.parse_config()
+        self.logger = config_logger("PlexMon Started")
+        
+        # Creates Sabnzbd handler to trigger pause and resume
         try:
-            wait_check()
-            running = check_plex()
-            if not running:
-                print("{0}: \n\t****Plex found not running****\n".format(datetime.datetime.now()))
-                start_plex()
-        except KeyboardInterrupt:
-            print("Exiting Monitor - plex is no longer being monitored.")
-            sys.exit(0)
+            self.sabnzbd = sabnzbd(config["sab_host"], config["sab_port"], config["sab_api_key"])
+        except:
+            self.logger.critical("Could not connect to Sabnzbd - trying to restart and connect")
+            self.restart_sabnzbd()
+            time.sleep(60)
+            self.sabnzbd = sabnzbd_interface.Sabnzbd(config["sab_host"], config["sab_port"], config["sab_api_key"])
+        
+        # Create Plex handler to do plex operations - may expand role in the future
+        try:
+            self.plex = plex_handler.Plex_interface(config["plex_host"], config["plex_port"], config["plex_token"])
+        except:
+            self.logger.critical("Could not connect to PMS - trying to restart and connect")
+            self.restart_plex()
 
-def start_plex():
-    """ starts plex service again after being found not running """
-    print("Staring Plex: {0}".format(datetime.datetime.now()))
-    os.popen("C:\\Program Files (x86)\\Plex\\Plex Media Server\\Plex Media Server.exe")
+        # Creates very basic VPN Handler
+        self.nordvpn = nordvpn.NordVPN(self.config["vpn_path"])
+        
+        # This just sets a class var - if it is false, SABNZBD will always be active
+        if self.config["use_vpn"]:
+            self.use_vpn = True
+        else:
+            self.use_vpn = False
 
-def wait_check():
-    """ Depending on what time it is, it'll timeout between queries """
-    global VPN_ON
-    global OMBI_ON
-    current_hour = datetime.datetime.now().hour
-    current_day = datetime.datetime.now().weekday()
-    # Checks to see if its between 2AM and 4PM During the Week, if so VPN is enabled.
-    if (VPN_START < current_hour < VPN_END) and (current_day not in [5, 6]):
-        if not VPN_ON:
-            subprocess.run(["C:\\Program Files (x86)\\NordVPN\\nordvpn", "-c"])
-            VPN_ON = True
-        if OMBI_ON and OMBI_CHECK:
-            toggle_ombi(0) 
-        print("{0}: Checking again in {1} minutes.".format(datetime.datetime.now(), NOT_SO_OFTEN/60))
-        time.sleep(NOT_SO_OFTEN)
+    def parse_config(self):
+        """ Parses the config.yaml file located in same directory """
+        try:
+            config_yaml = open("local_config.yaml", "r")
+        except FileNotFoundError:
+            self.logger.critical("Config file does not exist - service exiting")
+            self.SvcStop()
+        self.config = yaml.load(config_yaml, Loader=yaml.Loader)
+        config_yaml.close()
 
-    else:
-        tasklist = get_tasklist()
-        OMBI_ON = ombi_search(tasklist)[0]
-    # elif current_hour >= 16:
-        current_day = datetime.datetime.now().weekday()
-        if VPN_ON or (current_day in [5, 6]):
-            subprocess.run(["C:\\Program Files (x86)\\NordVPN\\nordvpn", "-d"])
-            VPN_ON = False
-        if not OMBI_ON and OMBI_CHECK:
-            toggle_ombi(1)
-        print("{0}: Checking again in {1} minute/s.".format(datetime.datetime.now(), OFTEN/60))
-        time.sleep(OFTEN)
+    def restart_plex(self):
+        """ starts plex service again after being found not running """
+        self.logger.info("Restarting Plex")
+        os.popen(f"{self.config['plex_path']}")
 
-def check_plex():
-    """ Just combines get_tasklist and plex_search to reduce code """
-    tasklist = get_tasklist()
-    return plex_search(tasklist)
+    def restart_sabnzbd(self):
+        """ Starts Sabnzbd server if found not running """
+        self.logger.info("Restarting SABNZBD")
+        os.popen(f"{self.config['sab_path']}")
 
-def check_ombi():
-    tasklist = get_tasklist()
-    return ombi_search(tasklist)
+    def check_plex(self):
+        """ Queries Plex to see if our target server is listed """
+        return self.plex.is_alive(self.config["plex_server_name"])
 
-def get_tasklist():
-    """ Used to retrieve and parse tasklist to monitor """
-    return os.popen("tasklist").read().split("\n")
+    def get_plex_activity(self):
+        """ Returns current active streams on PMS """
+        return self.plex.get_current_sessions()
 
-def plex_search(tasklist):
-    """ Used to search the tasklist for "Plex Media Server.exe" """
-    # running = False
-    # for row in tasklist:
-    #     if "Plex Media Server.exe" in row:
-    #         print("Plex is running: {0}".format(datetime.datetime.now()))
-    #         running = True
-    #         break
-    # return running
-    # Refactor:
-    return any(["Plex Media Server.exe" in row for row in tasklist])
+    def plex_to_vpn_transition(self):
+        """ Handles the plex to VPN transition:
+            Checks active streams to make sure its 0
+            Activates VPN
+            Resumes SABNZBD activity
+        """
+        current_active_streams = self.plex.get_current_sessions()
+        while current_active_streams != 0:
+            # Checks every 5 minutes until streams == 0
+            time.sleep(300)
+            current_active_streams = self.plex.get_current_sessions()
+        sab_queue_len = self.sabnzbd.get_queue_length()
+        sab_paused = self.sabnzbd.get_paused()
+        if sab_queue_len > 0 and sab_paused:
+            self.logger.info("Activating VPN Connection and SABNZBD Resume")
+            self.nordvpn.connect_group()
+            # Waits 1 minute for VPN to connect and routing to be reestablished
+            time.sleep(60)
+            self.sabnzbd.resume_all()
+            # True represents active downloading and VPN connection
+            return True
+        # False represents nothing to download so no VPN connection needed
+        return False
 
-def generic_tasklist_serach(search_str, tasklist):
-    """ Searches the tasklisk for <search_string> """
-    return any([search_str in row for row in tasklist])
+    def vpn_to_plex_transition(self):
+        """ Handles the VPN back to plex transition:
+            Pauses SABNZBD
+            Disconnects VPN
+        """
+        # Only Pauses downloads if use_vpn
+        self.logger.info("Deactivating VPN and Pausing SABNZBD")
+        self.sabnzbd.pause_all()
+        # Allow sometime for queue to pause
+        time.sleep(20)
+        self.nordvpn.disconnect()
+        # Waits for VPN to disconnect before returning
+        time.sleep(60)
+        # False signifies disconnected VPN
+        return False
 
-def ombi_search(tasklist):
-    """ Searches tasklist for ombi and starts if its not running """
-    running = False
-    pid_regex = r".+\.exe\s+([0-9]+)\s+\w+"
-    pid = "N/A"
-    for row in tasklist:
-        if "Ombi.exe" in row:
-            pid = re.findall(pid_regex, row)
-    return [running, pid]
-
-def toggle_ombi(toggle:bool):
-    """ Turns off or on ombi """
-    tasklist = get_tasklist
-    [ombi_on, pid] = ombi_search(tasklist)
-    if not ombi_on and toggle:
-        os.popen("C:\\Users\\basil\\ombi\\Ombi.exe")
-        return 0
-    elif ombi_on and not toggle:
-        print("Killing Ombi")
-        # TODO: implement kill ombi
-        return 1
-    # returns -1 for no activity
-    return -1
-
-def get_config(path=None):
-    """ Gets sabnzbd config, and finds the schedule, uses these values for On/Off vpn """
-    # Field format:
-    # 1 2 3 1234567 resume
-    # Enable/Disable Minute Hour DayOfTheWeek Action
-    # Enabled 3:02AM EveryDay Resume
-    schedule_re = r"sched.+"
-    if path is None:
-        path = PATH_FOR_SAB_CONFIG
-    file = open(path, "r")
-    config = file.read()
-    file.close()
-    sched = re.findall(schedule_re, config)
-    if len(sched) < 1:
-        print("No Schedule Found")
-        return 0
-    schedule = sched[0].split(",")
-    for schedule_time in schedule:
-        schedule_time = schedule_time.strip("schedlines = ")
-        if re.match(r".+resume.+", schedule_time):
-            # Sets VPN on time
-            VPN_ON = 2
-            schedule_time.split()
-        elif re.match(r".+pause.+", schedule_time):
-            # Sets VPN off time
-            pass
+    def main(self):
+        # initial check
+        running = self.plex.is_alive()
+        # Because NORD doesn't have a way to check its connected from the cmdline
+        vpn_on = False
+        # just used to create datetime object:
+        start_time = datetime.datetime.now()
+        vpn_on_time = start_time.replace(hour=self.config["peak_stop"])
+        vpn_off_time = start_time.replace(hour=self.config["peak_start"])
+        while not running and self.is_running:
+            self.restart_plex()
+            time.sleep(60)
+            running = self.plex.is_alive()
+        while True:
+            try:
+                current_time = datetime.datetime.now()
+                # Currently only works with VPN_Start < VPN_Stop, does not handle date transitions - Will address later
+                if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
+                    if not vpn_on:
+                        vpn_on = self.plex_to_vpn_transition()
+                    time.sleep(self.config["offpeak_interval"] * 60)
+                else:
+                    if vpn_on:
+                        vpn_on = self.vpn_to_plex_transition()
+                    plex_alive = self.check_plex()
+                    if not plex_alive:
+                        self.logger.warning("Plex found not running")
+                        self.restart_plex()
+                    time.sleep((self.config["peak_interval"]))                
+            except KeyboardInterrupt:
+                self.logger.critical("Exiting PlexMon")
 
 if __name__ == '__main__':
-    main()
+    # Handling the pre-config to make sure things go smoothly
+    arg_len = len(sys.argv)
+    if arg_len < 2:
+        print("No config file defined - please select a config file and try again: python(3) plex_monitor.py <configfile.yaml>")
+        sys.exit("Try again with config file")
+    if arg_len >= 2:
+        if args_len > 2:
+            print(f"All arguments after {sys.argv[1]} are being ignored: {sys.argv[2:]}")
+        config = sys.argv[1]
+        if ".yaml" not in config.lower():
+            config_yaml = f"{config}.yaml"
+            if os.path.isfile(config_yaml):
+                config = config_yaml
+            else:
+                sys.exit(f"Could not find {config_yaml} - please check config file and try again")
+        else:
+            if not os.path.isfile(config):
+                sys.exit(f"Could not find {config} - please check config file and try again")
+    # Starting the monitor!
+    plex_monitor = plexMon(config)
+    plex_monitor.main()
