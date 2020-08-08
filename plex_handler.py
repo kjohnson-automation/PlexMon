@@ -20,8 +20,7 @@ class Plex_interface():
         """ Called by all commands - returns full response if available """
         get = self.gen_get_str(cmd)
         try:
-            response = requests.get(get, verify=False)
-            return self.generic_json_return(response)
+            return requests.get(get, verify=False)
         except requests.ConnectionError as error:
             print(f"Error: {error}")
             return ""
