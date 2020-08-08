@@ -6,7 +6,6 @@ import sys
 import time
 import datetime
 import subprocess
-import re
 import logging
 import yaml
 
@@ -180,10 +179,11 @@ class plexMon():
 
                 # Currently only works with VPN_ON < VPN_OFF, does not handle date transitions - Will address later
                 if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
-                    if not vpn_on:
+                    if self.eary_transition:
+                        pass
+                    elif not vpn_on:
                         vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
-                    # time.sleep(self.config["offpeak_interval"] * 60)
                     time.sleep(60)
                     if self.sabnzbd.get_queue_length() == 0:
                         self.trigger_early_transition()

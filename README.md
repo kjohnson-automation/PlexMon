@@ -16,4 +16,19 @@ Version 1 Support will include:
     * Log file location
     * etc...
 
-You guys know me, let me know if there is anything in paritcular you want to see.
+
+## How to Use ##
+
+* First make sure python is installed and within your path, it shouldn't matter exactly which version of python, but something over 3.5 is required.
+* Make sure you have the following libraries installed by doing: ```pip install <library>```
+    * pyyaml
+    * requests
+    * xmltodict
+
+* Populate the config.yaml file that has an empty template included
+    * The plex token is the hardest to get, follow [this guide.](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)
+* Once the config file is complete - navigate to the directory it is saved in and run:
+    * ```python plex_monitor.py config.yaml```
+
+### PlexMon should now be running as a script and automatically toggle the VPN and Sabnzbd during the specified intervals.
+
