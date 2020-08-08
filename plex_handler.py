@@ -3,6 +3,8 @@
 import requests
 import xmltodict
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Plex_interface():
     """ Plex interface for checking plex status """
@@ -14,6 +16,16 @@ class Plex_interface():
         """ Generates a API get str """
         return f"{self.base_addr}{cmd}{self.key_str}"
 
+    def _get_request(self, cmd:str):
+        """ Called by all commands - returns full response if available """
+        get = self.gen_get_str(cmd)
+        try:
+            response = requests.get(get, verify=False)
+            return self.generic_json_return(response)
+        except requests.ConnectionError as error:
+            print(f"Error: {error}")
+            return ""
+
     def parse_xml(self, xml_str):
         """ Returns dict of xml str """
         return xmltodict.parse(xml_str)
@@ -21,22 +33,18 @@ class Plex_interface():
     def get_current_sessions(self):
         """ Checks to see if any active sessions are being played """
         # /status/sessions
-        cmd_str = self.gen_get_str("status/sessions")
-        try:
-            play_xml = requests.get(cmd_str, verify=False)
-        except ConnectionError:
-            return False
+        play_xml = self._get_request("status/sessions")
+        if play_xml == "":
+            return "Plex Unavailable"
         play_dict = self.parse_xml(play_xml.text)
         return play_dict["MediaContainer"]["@size"]
 
     def is_alive(self, name:str=""):
         """ Checks if server is alive """
         # /servers
-        cmd_str = self.gen_get_str("servers")
-        try:
-            servers_xml = requests.get(cmd_str, verify=False)
-        except ConnectionError:
-            return False
+        servers_xml = self._get_request("servers")
+        if servers_xml == "":
+            return "Plex Unavailable"
         servers_dict = self.parse_xml(servers_xml.text)
         server =  servers_dict["MediaContainer"]["Server"]["@name"]
         return server == name
