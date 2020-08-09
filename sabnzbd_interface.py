@@ -78,6 +78,6 @@ class Sabnzbd():
 
     def resume_all(self):
         """ Resumes Queue """
-        return self._get_request("pause")
+        return self._get_request("resume")
         # response = requests.get(self.create_get("resume"), verify=False)
         # return self.generic_json_return(response)

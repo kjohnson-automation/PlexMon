@@ -73,6 +73,8 @@ class plexMon():
         else:
             self.use_vpn = False
 
+        self.eary_transition = False
+
     def parse_config(self, config):
         """ Parses the config.yaml file located in same directory """
         try:
@@ -116,15 +118,21 @@ class plexMon():
             time.sleep(300)
             current_active_streams = self.plex.get_current_sessions()
         sab_queue_len = self.sabnzbd.get_queue_length()
+        self.logger.info(f"Currently {sab_queue_len} to download")
         sab_paused = self.sabnzbd.get_paused()
         if sab_queue_len > 0 and sab_paused:
             self.logger.info("Activating VPN Connection and SABNZBD Resume")
             # For some reason - group is not working correctly
             self.nordvpn.connect_group()
+            print("Returned from VPN connect")
             # self.nordvpn.connect()
             # Waits 1 minute for VPN to connect and routing to be reestablished
             time.sleep(60)
             self.sabnzbd.resume_all()
+            queue = self.sabnzbd.get_queue()
+            self.logger.info("Getting Files:")
+            for file in queue["queue"]["slots"]:
+                self.logger.info(f"Filename: {file['filename']}")
             # True represents active downloading and VPN connection
             return True
         # False represents nothing to download so no VPN connection needed
@@ -176,12 +184,11 @@ class plexMon():
         while True:
             try:
                 current_time = datetime.datetime.now()
-
                 # Currently only works with VPN_ON < VPN_OFF, does not handle date transitions - Will address later
                 if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
-                    if self.eary_transition:
-                        pass
-                    elif not vpn_on:
+                    # if self.eary_transition:
+                    #     pass
+                    if not vpn_on and not self.eary_transition:
                         vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
                     time.sleep(60)
