@@ -210,6 +210,8 @@ class plexMon():
 
 if __name__ == '__main__':
     # Handling the pre-config to make sure things go smoothly
+    # Waits 2 minutes after starting before trigginger anything - allowing for system to completely boot since it starts on boot
+    time.sleep(120)
     arg_len = len(sys.argv)
     if arg_len < 2:
         print("No config file defined - please select a config file and try again: python(3) plex_monitor.py <configfile.yaml>")

@@ -141,8 +141,8 @@ class plexMon(PyService):
         vpn_on = False
         # just used to create datetime object:
         start_time = datetime.datetime.now()
-        vpn_on_time = start_time.replace(hour=self.config["peak_stop"])
-        vpn_off_time = start_time.replace(hour=self.config["peak_start"])
+        vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0)
+        vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0)
         while not running and self.is_running:
             self.restart_plex()
             time.sleep(60)
