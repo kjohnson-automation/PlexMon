@@ -42,8 +42,8 @@ class plexMon():
     def __init__(self, config:str):
         self.parse_config(config)
         self.logger = config_logger("PlexMon Started")
-        
         # Creates Sabnzbd handler to trigger pause and resume
+
         try:
             print("Connecting to sabnzbd")
             self.sabnzbd = sabnzbd_interface.Sabnzbd(self.config["sab_host"], self.config["sab_port"], self.config["sab_api_key"])
@@ -53,7 +53,7 @@ class plexMon():
             self.restart_sabnzbd()
             time.sleep(60)
             self.sabnzbd = sabnzbd_interface.Sabnzbd(self.config["sab_host"], self.config["sab_port"], self.config["sab_api_key"])
-        
+
         # Create Plex handler to do plex operations - may expand role in the future
         try:
             print("connecting to plex")
@@ -66,7 +66,7 @@ class plexMon():
 
         # Creates very basic VPN Handler
         self.nordvpn = nordvpn.NordVPN(self.config["vpn_path"])
-        
+
         # This just sets a class var - if it is false, SABNZBD will always be active
         if self.config["use_vpn"]:
             self.use_vpn = True
@@ -201,7 +201,7 @@ class plexMon():
                     if not plex_alive:
                         self.logger.warning("Plex found not running")
                         self.restart_plex()
-                    time.sleep(int(self.config["peak_interval"]) * 60)                
+                    time.sleep(int(self.config["peak_interval"]) * 60)
             except KeyboardInterrupt:
                 print("triggering exit")
                 self.logger.critical("Exiting PlexMon")
