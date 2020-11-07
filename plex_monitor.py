@@ -81,6 +81,7 @@ class plexMon():
             config_yaml = open(config, "r")
         except FileNotFoundError:
             self.logger.critical("Config file does not exist - service exiting")
+            sys.exit(f"Invalid Config File: {config}")
         self.config = yaml.load(config_yaml, Loader=yaml.Loader)
         config_yaml.close()
 
@@ -114,7 +115,7 @@ class plexMon():
         current_active_streams = self.plex.get_current_sessions()
         while current_active_streams != "0":
             # Checks every 5 minutes until streams == 0
-            print("Found active streems")
+            self.logger.info("Found active streams")
             time.sleep(300)
             current_active_streams = self.plex.get_current_sessions()
         sab_queue_len = self.sabnzbd.get_queue_length()
@@ -151,6 +152,7 @@ class plexMon():
         # Allow sometime for queue to pause
         time.sleep(20)
         self.nordvpn.disconnect()
+        print("Disconnected VPN")
         # Waits for VPN to disconnect before returning
         time.sleep(60)
         # False signifies disconnected VPN
@@ -189,6 +191,7 @@ class plexMon():
                     # if self.eary_transition:
                     #     pass
                     if not vpn_on and not self.eary_transition:
+                        self.logger.info("Starting VPN")
                         vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
                     time.sleep(60)
@@ -196,12 +199,18 @@ class plexMon():
                         self.trigger_early_transition()
                 else:
                     if vpn_on:
+                        self.logger.info("Exiting VPN")
                         vpn_on = self.vpn_to_plex_transition()
                     plex_alive = self.check_plex()
                     if not plex_alive:
                         self.logger.warning("Plex found not running")
                         self.restart_plex()
                     time.sleep(int(self.config["peak_interval"]) * 60)
+
+                # Daily update of VPN Times
+                start_time = datetime.datetime.now()
+                vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
+                vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
             except KeyboardInterrupt:
                 print("triggering exit")
                 self.logger.critical("Exiting PlexMon")
