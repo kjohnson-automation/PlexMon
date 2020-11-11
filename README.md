@@ -32,3 +32,9 @@ Version 1 Support will include:
 
 ### PlexMon should now be running as a script and automatically toggle the VPN and Sabnzbd during the specified intervals.
 
+## BUGS ##
+* Still working on fixing a couple toggle vpn and resume/pause sabnzbd - note it will not start sabnzbd without vpn, however, theres a date check issue
+* Going to start integrating some nordvpn apis into the monitor.
+
+
+ - Updated 11/10/20
