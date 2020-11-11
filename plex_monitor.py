@@ -9,9 +9,9 @@ import subprocess
 import logging
 import yaml
 
-import sabnzbd_interface
-import plex_handler
-import nordvpn
+from handlers import sabnzbd_interface
+from handlers import plex_handler
+from handlers import nordvpn
 
 
 def config_logger(logger_name, log_loc:str=None):
