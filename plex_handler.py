@@ -8,7 +8,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Plex_interface():
     """ Plex interface for checking plex status """
-    def __init__(self, host:str="127.0.0.1", port:int=32400, token:str="4QczhHhzCkgDN4xB9E-3"):
+    def __init__(self, host:str="127.0.0.1", port:int=32400, token:str=""):
         self.base_addr = f"https://{host}:{port}/"
         self.key_str = f"?X-Plex-Token={token}"
 

@@ -37,9 +37,17 @@ def config_logger(logger_name, log_loc:str=None):
     return logger
 
 class plexMon():
-    """ Plex and subsequent service monitor """
-
+    """ This is the main PlexMon monitor - it will enable/disable vpn, pause/resume SABNZBD, and restart plex should it be found
+        not running.  The config file dictates the Peak/Off Peak hours as well as all the ncessary keys for connecting to the
+        different services
+    """
+    self.__version__ = 0.1
     def __init__(self, config:str):
+        print("     ____   _    ____  _     _      \n",
+              "    |    | | |  |  __| \ \  / /     \n",
+              "    |  D_| | |  |  -,   \ \/ /      \n",
+              "    |  |   | |_ |  -'_  / /\ \      \n",
+              "    |__|   |___||____| /_/  \_\     \n")
         self.parse_config(config)
         self.logger = config_logger("PlexMon Started")
         # Creates Sabnzbd handler to trigger pause and resume
@@ -72,8 +80,8 @@ class plexMon():
             self.use_vpn = True
         else:
             self.use_vpn = False
-
-        self.eary_transition = False
+        # TODO: Document early_transition
+        self.early_transition = False
 
     def parse_config(self, config):
         """ Parses the config.yaml file located in same directory """

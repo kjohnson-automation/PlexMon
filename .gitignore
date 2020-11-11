@@ -4,3 +4,4 @@ plex_monitor_service.py
 local_config.yaml
 *.pyc
 *.swp
+defaults.txt
