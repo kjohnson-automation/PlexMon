@@ -8,7 +8,12 @@ class NordVPN():
     def __init__(self, location):
         self.sub_location = f"{location}"
         self.sys_location = f"\"{location}\""
+        self.open_vpn()
         print(f"VPN Path: {self.sub_location}")
+
+    def open_vpn(self):
+        """ Starts VPN application """
+        os.system(f"\"{self.sys_location}\"")
 
     def connect(self, connect_cmd:str="-c"):
         """ Connects - using quick connect to NordVPN service """

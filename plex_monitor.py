@@ -31,9 +31,13 @@ def config_logger(logger_name, log_loc:str=None):
     file_handler = logging.FileHandler(logfile)
     file_handler.setFormatter(formatter)
 
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
     return logger
 
 class plexMon():
@@ -43,13 +47,14 @@ class plexMon():
     """
     def __init__(self, config:str):
         self.__version__ = "0.1.1"
-        print("     ____   _    ____  _     _      \n",
+        print("      ____   _    ____   _    _     \n",
               "    |    | | |  |  __| \ \  / /     \n",
               "    |  D_| | |  |  -,   \ \/ /      \n",
-              "    |  |   | |_ |  -'_  / /\ \      \n",
+              "    |  |   | |_ |  -`_  / /\ \      \n",
               "    |__|   |___||____| /_/  \_\     \n")
         self.parse_config(config)
-        self.logger = config_logger(f"PlexMon Started - Version: {self.__version__}")
+        self.logger = config_logger(f"PlexMon")
+        self.logger.info(f"Version: {self.__version__}")
         # Creates Sabnzbd handler to trigger pause and resume
 
         try:
@@ -132,9 +137,9 @@ class plexMon():
         if sab_queue_len > 0 and sab_paused:
             self.logger.info("Activating VPN Connection and SABNZBD Resume")
             # For some reason - group is not working correctly
-            self.nordvpn.connect_group()
-            print("Returned from VPN connect")
-            # self.nordvpn.connect()
+            # Note: Seems nord removed group connect currently 12/1/20
+            # self.nordvpn.connect_group()
+            self.nordvpn.connect()
             # Waits 1 minute for VPN to connect and routing to be reestablished
             time.sleep(60)
             self.sabnzbd.resume_all()
@@ -160,7 +165,6 @@ class plexMon():
         # Allow sometime for queue to pause
         time.sleep(20)
         self.nordvpn.disconnect()
-        print("Disconnected VPN")
         # Waits for VPN to disconnect before returning
         time.sleep(60)
         # False signifies disconnected VPN
@@ -209,7 +213,7 @@ class plexMon():
                 if self.check_time(vpn_on_time, vpn_off_time):
                     # if self.eary_transition:
                     #     pass
-                    if not vpn_on and not self.eary_transition:
+                    if not vpn_on and not self.early_transition:
                         self.logger.info("Starting VPN")
                         vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
@@ -241,6 +245,7 @@ class plexMon():
 if __name__ == '__main__':
     # Handling the pre-config to make sure things go smoothly
     # Waits 2 minutes after starting before trigginger anything - allowing for system to completely boot since it starts on boot
+    print("\n\tWaiting for 2 minutes to allow everything to boot\n")
     time.sleep(120)
     arg_len = len(sys.argv)
     if arg_len < 2:

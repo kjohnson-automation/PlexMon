@@ -9,7 +9,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class Sabnzbd():
     """ Handler for Sabnzbd API interface """
     def __init__(self, host:str="127.0.0.1", port:str="8085", api_key:str="c2e944a1f6c7110e9bb84930fabd3e2d"):
-        self.baseurl = f"https://{host}:{port}/sabnzbd/api?output=json&apikey={api_key}"
+        self.baseurl = f"http://{host}:{port}/sabnzbd/api?output=json&apikey={api_key}"
         self.status = self.get_full_status()
 
     def create_get(self, cmd:str=""):
