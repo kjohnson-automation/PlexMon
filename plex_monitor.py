@@ -16,7 +16,7 @@ from handlers import nordvpn
 
 def config_logger(logger_name, log_loc:str=None):
     """ Configures the file logger used for PlexMon - log saved here:
-        E:\PlexServiceLogs\
+        E:\PlexServiceLogs
     """
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
     file_date = datetime.datetime.now().strftime("%m_%d_%y_%H%M")

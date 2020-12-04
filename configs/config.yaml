@@ -1,0 +1,29 @@
+# Plex Server Instance Information
+plex_host: "127.0.0.1"
+plex_port: 32400
+plex_path: ""
+plex_token: ""
+plex_server_name: ""
+
+# Sabnzbd Instance Information:
+sab_host: 127.0.0.1
+sab_port: 8085
+sab_path: ""
+sab_api_key: ""
+
+# VPN Information
+vpn_path: ""
+vpn_connect_command: "-c"
+vpn_disconnect_command: "-d"
+use_vpn: True
+
+# Intervals are in mintues
+peak_interval: 1
+offpeak_interval: 15
+
+# 24 Hour format
+peak_start: 8
+peak_stop: 2
+
+# Location where log files will be stored
+loglocation: ""
