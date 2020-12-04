@@ -41,15 +41,15 @@ class plexMon():
         not running.  The config file dictates the Peak/Off Peak hours as well as all the ncessary keys for connecting to the
         different services
     """
-    self.__version__ = 0.1
     def __init__(self, config:str):
+        self.__version__ = "0.1.1"
         print("     ____   _    ____  _     _      \n",
               "    |    | | |  |  __| \ \  / /     \n",
               "    |  D_| | |  |  -,   \ \/ /      \n",
               "    |  |   | |_ |  -'_  / /\ \      \n",
               "    |__|   |___||____| /_/  \_\     \n")
         self.parse_config(config)
-        self.logger = config_logger("PlexMon Started")
+        self.logger = config_logger(f"PlexMon Started - Version: {self.__version__}")
         # Creates Sabnzbd handler to trigger pause and resume
 
         try:
@@ -177,6 +177,14 @@ class plexMon():
         self.sabnzbd.pause_all()
         self.nordvpn.disconnect()
 
+    def check_time(self, begin_time, end_time):
+        # If check time is not given, default to current UTC time
+        current_time = datetime.datetime.now().time()
+        if begin_time < end_time:
+            return current_time >= begin_time and current_time <= end_time
+        else: # crosses midnight
+            return current_time >= begin_time or current_time <= end_time
+
     def loop(self):
         # initial check
         running = self.check_plex()
@@ -184,18 +192,21 @@ class plexMon():
         # Because NORD doesn't have a way to check its connected from the cmdline
         vpn_on = False
         # just used to create datetime object:
-        start_time = datetime.datetime.now()
-        vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
-        vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
+        # start_time = datetime.datetime.now()
+        # vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
+        # vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
+        vpn_on_time = datetime.time(self.config["peak_stop"], 00)
+        vpn_off_time = datetime.time(self.config["peak_start"], 00)
         while not running:
             self.restart_plex()
             time.sleep(60)
             running = self.plex.is_alive()
         while True:
             try:
-                current_time = datetime.datetime.now()
+                # current_time = datetime.datetime.now()
                 # Currently only works with VPN_ON < VPN_OFF, does not handle date transitions - Will address later
-                if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
+                # if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
+                if self.check_time(vpn_on_time, vpn_off_time):
                     # if self.eary_transition:
                     #     pass
                     if not vpn_on and not self.eary_transition:
@@ -216,9 +227,11 @@ class plexMon():
                     time.sleep(int(self.config["peak_interval"]) * 60)
 
                 # Daily update of VPN Times
-                start_time = datetime.datetime.now()
-                vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
-                vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
+                # start_time = datetime.datetime.now().time()
+                # vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
+                vpn_on_time = datetime.time(self.config["peak_stop"], 00)
+                # vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
+                vpn_off_time = datetime.time(self.config["peak_start"], 00)
             except KeyboardInterrupt:
                 print("triggering exit")
                 self.logger.critical("Exiting PlexMon")
