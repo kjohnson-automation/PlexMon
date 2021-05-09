@@ -53,7 +53,7 @@ class plexMon():
               "    |  |   | |_ |  -`_  / /\ \      \n",
               "    |__|   |___||____| /_/  \_\     \n")
         self.parse_config(config)
-        self.logger = config_logger(f"PlexMon")
+        self.logger = config_logger(f"PlexMon", self.config["loglocation"])
         self.logger.info(f"Version: {self.__version__}")
         # Creates Sabnzbd handler to trigger pause and resume
 
@@ -196,9 +196,6 @@ class plexMon():
         # Because NORD doesn't have a way to check its connected from the cmdline
         vpn_on = False
         # just used to create datetime object:
-        # start_time = datetime.datetime.now()
-        # vpn_on_time = start_time.replace(hour=self.config["peak_stop"], minute=0, second=0, microsecond=0)
-        # vpn_off_time = start_time.replace(hour=self.config["peak_start"], minute=0, second=0, microsecond=0)
         vpn_on_time = datetime.time(self.config["peak_stop"], 00)
         vpn_off_time = datetime.time(self.config["peak_start"], 00)
         while not running:
@@ -207,15 +204,14 @@ class plexMon():
             running = self.plex.is_alive()
         while True:
             try:
-                # current_time = datetime.datetime.now()
-                # Currently only works with VPN_ON < VPN_OFF, does not handle date transitions - Will address later
-                # if vpn_on_time.time() < current_time.time() < vpn_off_time.time():
+                # TODO: Currently only works with VPN_ON < VPN_OFF, does not handle date transitions
                 if self.check_time(vpn_on_time, vpn_off_time):
                     # if self.eary_transition:
                     #     pass
-                    if not vpn_on and not self.early_transition:
-                        self.logger.info("Starting VPN")
-                        vpn_on = self.plex_to_vpn_transition()
+                    if (not vpn_on and not self.early_transition) or (self.sabnzbd.get_queue_length() != 0):
+                        if not vpn_on:
+                            self.logger.info("Starting VPN")
+                            vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
                     time.sleep(60)
                     if self.sabnzbd.get_queue_length() == 0:
