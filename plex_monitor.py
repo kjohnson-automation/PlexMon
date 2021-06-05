@@ -46,12 +46,13 @@ class plexMon():
         different services
     """
     def __init__(self, config:str):
-        self.__version__ = "0.1.1"
+        self.__version__ = "0.1.2"
         print("      ____   _    ____   _    _     \n",
               "    |    | | |  |  __| \ \  / /     \n",
               "    |  D_| | |  |  -,   \ \/ /      \n",
               "    |  |   | |_ |  -`_  / /\ \      \n",
-              "    |__|   |___||____| /_/  \_\     \n")
+              "    |__|   |___||____| /_/  \_\     \n",
+             f"          {self.__version__}        \n")
         self.parse_config(config)
         self.logger = config_logger(f"PlexMon", self.config["loglocation"])
         self.logger.info(f"Version: {self.__version__}")
