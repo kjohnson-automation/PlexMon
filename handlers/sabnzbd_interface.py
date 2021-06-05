@@ -35,20 +35,14 @@ class Sabnzbd():
     def generic_get(self, cmd:str=""):
         """ Generic get command for not supported commands """
         return self._get_request(cmd)
-        # response = requests.get(self.create_get(cmd), verify=False)
-        # return self.generic_json_return(response)
 
     def get_full_status(self):
         """ Returns full status of Sabnzbd """
         return self._get_request("fullstatus")
-        # response = requests.get(self.create_get("fullstatus"), verify=False)
-        # return self.generic_json_return(response)
         
     def get_queue(self):
         """ Returns the current queue of sabnzbd """
         return self._get_request("queue")
-        # response = requests.get(self.create_get("queue"), verify=False)
-        # return self.generic_json_return(response)
 
     def get_queue_length(self):
         """ Returns the number of items in download queue """
@@ -67,17 +61,11 @@ class Sabnzbd():
     def restart(self):
         """ Restarts Sabnzbd """
         return self._get_request("restart")
-        # response = requests.get(self.create_get("restart"), verify=False)
-        # return self.generic_json_return(response)
 
     def pause_all(self):
         """ Pauses Queue """
         return self._get_request("pause")
-        # response = requests.get(self.create_get("pause"), verify=False)
-        # return self.generic_json_return(response)
 
     def resume_all(self):
         """ Resumes Queue """
         return self._get_request("resume")
-        # response = requests.get(self.create_get("resume"), verify=False)
-        # return self.generic_json_return(response)
