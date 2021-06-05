@@ -7,7 +7,7 @@ plex_server_name: ""
 
 # Sabnzbd Instance Information:
 sab_host: 127.0.0.1
-sab_port: 8085
+sab_port: 8080
 sab_path: ""
 sab_api_key: ""
 
