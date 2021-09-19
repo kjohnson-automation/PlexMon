@@ -46,7 +46,7 @@ class plexMon():
         different services
     """
     def __init__(self, config:str):
-        self.__version__ = "0.1.2"
+        self.__version__ = "0.1.3"
         print("      ____   _    ____   _    _     \n",
               "    |    | | |  |  __| \ \  / /     \n",
               "    |  D_| | |  |  -,   \ \/ /      \n",
@@ -123,7 +123,6 @@ class plexMon():
             Activates VPN
             Resumes SABNZBD activity
         """
-        self.logger.info("Transitioning to VPN/active Sabnzbd")
         # resets for next cycle
         self.eary_transition = False
         current_active_streams = self.plex.get_current_sessions()
@@ -133,7 +132,6 @@ class plexMon():
             time.sleep(300)
             current_active_streams = self.plex.get_current_sessions()
         sab_queue_len = self.sabnzbd.get_queue_length()
-        self.logger.info(f"Currently {sab_queue_len} to download")
         sab_paused = self.sabnzbd.get_paused()
         if sab_queue_len > 0 and sab_paused:
             self.logger.info("Activating VPN Connection and SABNZBD Resume")
@@ -211,7 +209,6 @@ class plexMon():
                     #     pass
                     if (not vpn_on and not self.early_transition) or (self.sabnzbd.get_queue_length() != 0):
                         if not vpn_on:
-                            self.logger.info("Starting VPN")
                             vpn_on = self.plex_to_vpn_transition()
                     # Removing the specified timeout for off peak - Plex is not accessible anyway
                     time.sleep(60)
