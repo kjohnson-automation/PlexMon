@@ -22,7 +22,7 @@ peak_interval: 1
 offpeak_interval: 15
 
 # 24 Hour format
-peak_start: 8
+peak_start: 5
 peak_stop: 2
 
 # Location where log files will be stored
