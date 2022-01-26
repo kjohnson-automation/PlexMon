@@ -139,6 +139,7 @@ class plexMon():
             # Note: Seems nord removed group connect currently 12/1/20
             # self.nordvpn.connect_group()
             self.nordvpn.connect()
+            self.logger.info("VPN connect returned")
             # Waits 1 minute for VPN to connect and routing to be reestablished
             time.sleep(60)
             self.sabnzbd.resume_all()

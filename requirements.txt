@@ -1,0 +1,5 @@
+plexapi==4.9.1
+PyYAML==6.0
+requests==2.27.1
+urllib3==1.26.8
+xmltodict==0.12.0
